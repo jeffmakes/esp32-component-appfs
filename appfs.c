@@ -569,6 +569,7 @@ esp_err_t appfsRename(const char *from, const char *to) {
 	hdr.serial++;
 	hdr.crc32=0;
 	int nextDelete=-1;
+        bool was_renamed = false;
 	for (int j=0; j<APPFS_PAGES; j++) {
 		//Grab old page info from current meta sector
 		memcpy(&pi, &appfsMeta[appfsActiveMeta].page[j], sizeof(pi));
@@ -581,10 +582,11 @@ esp_err_t appfsRename(const char *from, const char *to) {
 			//A page in the file to be deleted.
 			nextDelete=pi.next;
 			needDelete=1;
-		} else if (pi.used==APPFS_USE_DATA && strcmp(pi.name, from)==0) {
+		} else if (!was_renamed && pi.used==APPFS_USE_DATA && strcmp(pi.name, from)==0) {
 			//Found old name. Rename to new.
 			strncpy(pi.name, to, sizeof(pi.name));
 			pi.name[sizeof(pi.name)-1]=0;
+                        was_renamed = true;
 		}
 		//If hdr needs deletion, leave it at 0xfffff...
 		if (!needDelete) {
